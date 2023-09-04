@@ -1,0 +1,24 @@
+<VAST version="3.0">
+<Ad>
+<InLine>
+<AdSystem>test pivotroots</AdSystem>
+<AdTitle>test pivotroots</AdTitle>
+<Impression/>
+<Creatives>
+<Creative>
+<Linear>
+<Duration>15</Duration>
+<AdParameters>
+<![CDATA[ <Root> <env>b</env> <Ed>3BRsqtVZBLO+2W2QvZcRpRqQrl9hHWTIOpKdb9CYbyyYjc0pA+/o5b0qzl1L6i/yqbsMHib58hvfoSfeYdDnYVwLoquXmJhG20F3AuUgENydOfr6N4svaIL+Wv3H12r0RqxtKYpD8ACqtHS2C+MtBepcV5lDIHizHnEyGyrISQI=</Ed> <pURL>https://yaas-b.performoo.com/latest</pURL> <auURL>https://tags3-b.performoo.com/dXtIUTmd/au/d2tKuxNt/data.json</auURL> <netId>dXtIUTmd</netId> <auId>d2tKuxNt</auId> <pageURL></pageURL> </Root> ]]>
+</AdParameters>
+<MediaFiles>
+<MediaFile type="application/javascript" bitrate="1500" width="600" height="400" delivery="progressive" apiFramework="VPAID">
+<![CDATA[ http://localhost:8082/tcvpaid.js ]]>
+</MediaFile>
+</MediaFiles>
+</Linear>
+</Creative>
+</Creatives>
+</InLine>
+</Ad>
+</VAST>
