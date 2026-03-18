@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Processor UI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen font-sans">
+
+    <div class="max-w-6xl mx-auto p-4 py-10">
+        <header class="mb-10 border-b border-gray-800 pb-6">
+            <h1 class="text-3xl font-bold text-white tracking-tight">Watermark <span class="text-indigo-500">Service</span></h1>
+            <p class="text-gray-400 mt-2">Submit processing jobs to <code class="bg-gray-800 px-2 py-1 rounded text-pink-400 text-sm">localhost:3000/process</code></p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <div class="lg:col-span-5 space-y-6">
+                <div class="bg-gray-800 rounded-2xl p-6 shadow-2xl border border-gray-700">
+                    <h2 class="text-lg font-semibold mb-6 flex items-center gap-2">
+                        <i class="fa-solid fa-gear text-indigo-500"></i> Request Parameters
+                    </h2>
+
+                    <div class="space-y-4">
+                        <div>
+                            <label class="text-xs font-bold text-gray-500 uppercase block mb-1">Process Type</label>
+                            <input type="text" id="type" value="WATERMARK" readonly 
+                                   class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-sm text-gray-400 cursor-not-allowed">
+                        </div>
+
+                        <div>
+                            <label class="text-xs font-bold text-gray-500 uppercase block mb-1">S3 Upload Path</label>
+                            <input type="text" id="s3UpPath" value="lokesg/raw5/green2.mp4" 
+                                   class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-sm focus:border-indigo-500 outline-none">
+                        </div>
+
+                        <div>
+                            <label class="text-xs font-bold text-gray-500 uppercase block mb-1">S3 Full Path (Source URL)</label>
+                            <textarea id="s3Path" rows="3" 
+                                      class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-xs focus:border-indigo-500 outline-none">https://media-secure.dilogs.com/21af4b32-28be-4dba-997d-8bcaea7e7c82/media/html/gtuAR_vBk/raw?token=TY0XVFIOQHzBDIoXKAVLr0l3OvK39F_NOMc9xZD87x0&expires=1773818295&token_path=%2F21af4b32-28be-4dba-997d-8bcaea7e7c82%2F</textarea>
+                        </div>
+
+                        <div>
+                            <label class="text-xs font-bold text-gray-500 uppercase block mb-1">Watermark Overlay URL (imgUrl)</label>
+                            <input type="text" id="imgUrl" value="https://assets.dilogs.com/watermark/gray.mp4"
+                                   class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-sm focus:border-indigo-500 outline-none">
+                        </div>
+
+                        <button id="submitBtn" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-lg transition-all flex items-center justify-center gap-2 mt-4 shadow-lg shadow-indigo-900/20">
+                            <i class="fa-solid fa-play text-xs"></i> Start Processing
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-black/40 rounded-xl p-4 border border-gray-800">
+                    <p class="text-[10px] text-gray-500 font-mono uppercase mb-2">Live Payload Preview</p>
+                    <pre id="payloadPreview" class="text-[11px] text-indigo-300 font-mono overflow-x-auto"></pre>
+                </div>
+            </div>
+
+            <div class="lg:col-span-7 space-y-6">
+                <div id="loader" class="hidden bg-gray-800 rounded-2xl p-20 text-center animate-pulse border border-indigo-500/30">
+                    <i class="fa-solid fa-circle-notch fa-spin text-4xl text-indigo-500 mb-4"></i>
+                    <p class="text-xl font-medium">Processing Video...</p>
+                    <p class="text-gray-500 text-sm mt-2">Transcoding and applying watermark overlays</p>
+                </div>
+
+                <div id="resultView" class="hidden space-y-6">
+                    <div class="bg-black rounded-2xl overflow-hidden shadow-2xl border border-gray-800 aspect-video">
+                        <video id="outputVideo" controls class="w-full h-full"></video>
+                    </div>
+
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3" id="metaContainer">
+                        </div>
+
+                    <div class="flex gap-4">
+                        <a id="dlLink" href="#" target="_blank" class="flex-1 bg-gray-100 hover:bg-white text-gray-900 font-bold py-3 rounded-xl text-center flex items-center justify-center gap-2 transition-colors">
+                            <i class="fa-solid fa-download"></i> Download File
+                        </a>
+                    </div>
+                </div>
+
+                <div id="emptyState" class="bg-gray-800/50 border-2 border-dashed border-gray-700 rounded-2xl p-20 text-center">
+                    <i class="fa-solid fa-clapperboard text-5xl text-gray-700 mb-4"></i>
+                    <p class="text-gray-500">Configure parameters and start processing to see results here.</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const inputs = ['s3UpPath', 's3Path', 'imgUrl'];
+        const payloadPreview = document.getElementById('payloadPreview');
+
+        // Update Payload Preview in real-time
+        function updatePreview() {
+            const payload = {
+                type: "WATERMARK",
+                s3UpPath: document.getElementById('s3UpPath').value,
+                s3Path: document.getElementById('s3Path').value,
+                videoProps: {
+                    watermark: {
+                        imgUrl: document.getElementById('imgUrl').value
+                    }
+                }
+            };
+            payloadPreview.textContent = JSON.stringify(payload, null, 4);
+            return payload;
+        }
+
+        inputs.forEach(id => document.getElementById(id).addEventListener('input', updatePreview));
+        updatePreview();
+
+        // Handle Submit
+        document.getElementById('submitBtn').addEventListener('click', async () => {
+            const btn = document.getElementById('submitBtn');
+            const loader = document.getElementById('loader');
+            const resultView = document.getElementById('resultView');
+            const emptyState = document.getElementById('emptyState');
+
+            // UI Reset
+            btn.disabled = true;
+            btn.classList.add('opacity-50');
+            emptyState.classList.add('hidden');
+            resultView.classList.add('hidden');
+            loader.classList.remove('hidden');
+
+            try {
+                const response = await fetch('http://localhost:3000/process', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updatePreview())
+                });
+
+                const data = await response.json();
+                renderResponse(data);
+            } catch (err) {
+                alert("Error connecting to server. Is localhost:3000 running?");
+                loader.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                btn.classList.remove('opacity-50');
+            }
+        });
+
+        function renderResponse(data) {
+            document.getElementById('loader').classList.add('hidden');
+            document.getElementById('resultView').classList.remove('hidden');
+
+            // Video player
+            const video = document.getElementById('outputVideo');
+            video.src = data.viewUrl;
+            document.getElementById('dlLink').href = data.downloadUrl;
+
+            // Metadata Grid
+            const meta = data.processedMetaData;
+            const items = [
+                { k: 'Resolution', v: meta.resolution, i: 'fa-expand' },
+                { k: 'Duration', v: meta.duration, i: 'fa-clock' },
+                { k: 'Codec', v: meta.videoCodec, i: 'fa-code' },
+                { k: 'Size', v: (meta.fileSizeBytes / (1024*1024)).toFixed(2) + ' MB', i: 'fa-database' }
+            ];
+
+            document.getElementById('metaContainer').innerHTML = items.map(item => `
+                <div class="bg-gray-800 p-3 rounded-xl border border-gray-700">
+                    <p class="text-[10px] font-bold text-gray-500 uppercase flex items-center gap-1 mb-1">
+                        <i class="fa-solid ${item.i} text-indigo-500"></i> ${item.k}
+                    </p>
+                    <p class="text-sm font-semibold">${item.v}</p>
+                </div>
+            `).join('');
+        }
+    </script>
+</body>
+</html>
